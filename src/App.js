@@ -25,7 +25,18 @@ class HighLighter extends Component {
     const selection = selectionObj.toString();
     const anchorNode = selectionObj.anchorNode;
     const focusNode = selectionObj.focusNode;
-    let selectionStart = selectionObj.anchorOffset;
+    const anchorOffset = selectionObj.anchorOffset;
+    const focusOffset = selectionObj.focusOffset;
+    const forward = (focusOffset - anchorOffset)>0;
+    let selectionStart = forward? anchorOffset: focusOffset;
+
+    console.log({
+      anchorNode,
+      focusNode,
+      position: anchorNode.compareDocumentPosition(focusNode),
+      anchorOffset: selectionObj.anchorOffset,
+      focusOffset: selectionObj.focusOffset
+    });
 
     if (anchorNode.parentNode.getAttribute('data-order')
       && anchorNode.parentNode.getAttribute('data-order') === 'middle') {
@@ -36,17 +47,17 @@ class HighLighter extends Component {
       selectionStart += this.state.selectionEnd;
     }
     const selectionEnd = selectionStart + selection.length;
+    console.log(selectionStart,selectionEnd);
+    
     const first = this.state.text.slice(0, selectionStart);
     const middle = this.state.text.slice(selectionStart, selectionEnd);
     const last = this.state.text.slice(selectionEnd);
-    const range = selectionObj.getRangeAt(0);
     const span = document.createElement('span');
-    debugger;
-    span.setAttribute('class', 'test');
-    debugger;
+
+    this.props.customClass ? span.setAttribute('class', this.props.customClass) :
+      span.setAttribute('class', 'test');
     this.setState({
       selection,
-      range,
       anchorNode,
       focusNode,
       selectionStart,
@@ -55,7 +66,13 @@ class HighLighter extends Component {
       middle,
       last
     });
-
+    if (this.props.selectionHandler) {
+      this.props.selectionHandler({
+        selection,
+        selectionStart,
+        selectionEnd
+      });
+    }
   }
 
   render() {
@@ -91,11 +108,20 @@ class HighLighter extends Component {
 
 
 class App extends Component {
+  constructor() {
+    super();
+    this.selectionHandler = this.selectionHandler.bind(this);
+  }
+
+  selectionHandler(selection) {
+   //do something with selection
+  }
   render() {
     const text = `We present the first class of mathematically rigorous, general, .`;
     return (
       <HighLighter
         text={text}
+        selectionHandler={this.selectionHandler}
         customClass='test'
       />
     );
