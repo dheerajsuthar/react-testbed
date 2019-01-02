@@ -27,8 +27,18 @@ class HighLighter extends Component {
     const focusNode = selectionObj.focusNode;
     const anchorOffset = selectionObj.anchorOffset;
     const focusOffset = selectionObj.focusOffset;
-    const forward = (focusOffset - anchorOffset)>0;
-    let selectionStart = forward? anchorOffset: focusOffset;
+    const position = anchorNode.compareDocumentPosition(focusNode);
+    let forward = false;
+
+    if (position === anchorNode.DOCUMENT_POSITION_FOLLOWING) {
+      forward = true;
+    } else if (position === 0) {
+      forward = (focusOffset - anchorOffset) > 0;
+    }
+
+    console.log('forward: ', forward);
+
+    let selectionStart = forward ? anchorOffset : focusOffset;
 
     console.log({
       anchorNode,
@@ -38,24 +48,32 @@ class HighLighter extends Component {
       focusOffset: selectionObj.focusOffset
     });
 
-    if (anchorNode.parentNode.getAttribute('data-order')
-      && anchorNode.parentNode.getAttribute('data-order') === 'middle') {
-      selectionStart += this.state.selectionStart;
-    }
-    if (anchorNode.parentNode.getAttribute('data-order')
-      && anchorNode.parentNode.getAttribute('data-order') === 'last') {
-      selectionStart += this.state.selectionEnd;
+    if (forward) {
+      if (anchorNode.parentNode.getAttribute('data-order')
+        && anchorNode.parentNode.getAttribute('data-order') === 'middle') {
+        selectionStart += this.state.selectionStart;
+      }
+      if (anchorNode.parentNode.getAttribute('data-order')
+        && anchorNode.parentNode.getAttribute('data-order') === 'last') {
+        selectionStart += this.state.selectionEnd;
+      }
+    } else {
+      if (focusNode.parentNode.getAttribute('data-order')
+        && focusNode.parentNode.getAttribute('data-order') === 'middle') {
+        selectionStart += this.state.selectionStart;
+      }
+      if (focusNode.parentNode.getAttribute('data-order')
+        && focusNode.parentNode.getAttribute('data-order') === 'last') {
+        selectionStart += this.state.selectionEnd;
+      }
     }
     const selectionEnd = selectionStart + selection.length;
-    console.log(selectionStart,selectionEnd);
-    
+    console.log(selectionStart, selectionEnd);
+
     const first = this.state.text.slice(0, selectionStart);
     const middle = this.state.text.slice(selectionStart, selectionEnd);
     const last = this.state.text.slice(selectionEnd);
-    const span = document.createElement('span');
 
-    this.props.customClass ? span.setAttribute('class', this.props.customClass) :
-      span.setAttribute('class', 'test');
     this.setState({
       selection,
       anchorNode,
@@ -66,6 +84,7 @@ class HighLighter extends Component {
       middle,
       last
     });
+
     if (this.props.selectionHandler) {
       this.props.selectionHandler({
         selection,
@@ -73,6 +92,7 @@ class HighLighter extends Component {
         selectionEnd
       });
     }
+
   }
 
   render() {
@@ -92,7 +112,7 @@ class HighLighter extends Component {
           </span>
           <span
             data-order="middle"
-            className="test">
+            className={this.props.customClass || "test"}>
             {this.state.middle}
           </span>
           <span
@@ -114,15 +134,20 @@ class App extends Component {
   }
 
   selectionHandler(selection) {
-   //do something with selection
+    //do something with selection
+    console.log(selection);
+
   }
   render() {
-    const text = `We present the first class of mathematically rigorous, general, .`;
+    const text = `Goedel machines are self-referential 
+    universal problem solvers making provably optimal self- improvements.
+    They formalize I. J. Good's informal remarks (1965) on an "intelligence 
+    explosion" through self-improving "super-intelligences".`;
     return (
       <HighLighter
         text={text}
         selectionHandler={this.selectionHandler}
-        customClass='test'
+        customClass='custom-class'
       />
     );
   }
